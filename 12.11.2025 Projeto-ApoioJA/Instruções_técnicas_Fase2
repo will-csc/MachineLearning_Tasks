@@ -1,0 +1,302 @@
+Resumo do objetivo:
+- Integrar um chatbot empático ao ApoioJá que:
+- seja acessado via widget (ícone 💬 flutuante);
+- comunique-se com backend Flask (/api/chat);
+- utilize Google Gemini (ou outra LLM) quando houver chave, com modo mock/fallback quando não houver;
+
+
+1. Preparação
+- Certifique-se de que a Fase 1 está funcionando: python run.py → site em http://127.0.0.1:5000/.
+
+Ative venv se já não estiver ativo:
+# Windows
+venv\Scripts\activate
+# mac/linux
+source venv/bin/activate
+
+
+Instale dependências (Gemini SDK):
+pip install python-dotenv
+
+# se usar google generative ai
+pip install google-generativeai
+
+Crie o arquivo .env
+
+insira
+GEMINI_API_KEY="YOUR_KEY_HERE" (mude para a chave capturado no gemini)
+
+Como obter a chave da Gemini API
+
+Faça login na sua conta Google.
+Vá para o site do Google Gen AI SDK ou o portal do Google AI Studio. 
+Crie ou selecione um projeto no Google Cloud/AI Studio. 
+Dentro do seu projeto, vá na seção de API Keys ou “Chaves de API”. 
+Gere uma nova chave de API para o projeto — ela será exibida como uma string alfanumérica. 
+Armazene essa chave de forma segura. Não divulgue em repositórios públicos.
+
+e use python-dotenv para carregar.
+
+2. Estrutura de arquivos novos/alterados
+
+Crie/edite os arquivos abaixo (caminho relativo app/):
+
+app/
+├── chatbot.py          # lógica da integração + fallback
+├── routes.py           # adicionar rota /api/chat
+├── templates/          # inserir widget antes do </body> em index.html e denuncia.html
+└── static/
+    └── style.css       # garantir CSS do widget/chat
+
+
+3. Backend — app/chatbot.py (com fallback)
+
+Crie app/chatbot.py com duas opções: modo real (usa Gemini) e modo mock (sempre disponível). Exemplo:
+
+# app/chatbot.py
+import os
+try:
+    from dotenv import load_dotenv
+    load_dotenv()
+except Exception:
+    pass
+
+# Tente importar SDK (pode falhar em ambiente sem lib)
+try:
+    import google.generativeai as genai
+    HAS_GEMINI = True
+except Exception:
+    HAS_GEMINI = False
+
+def init_gemini():
+    key = os.getenv("GEMINI_API_KEY")
+    if not key or not HAS_GEMINI:
+        return None
+    genai.configure(api_key=key)
+    # ajuste do nome do modelo conforme disponibilidade
+    return genai.GenerativeModel("gemini-pro")
+
+def gemini_reply(prompt):
+    model = init_gemini()
+    if not model:
+        return None
+    try:
+        response = model.generate_content(prompt)
+        # dependendo do SDK, acessar response.output or response.text
+        return getattr(response, "text", str(response))
+    except Exception as e:
+        return None
+
+# função pública
+def get_gemini_response(user_message, context=None):
+    """
+    Retorna string: resposta do Gemini se disponível, ou None.
+    """
+    prompt = build_prompt(user_message, context)
+    reply = gemini_reply(prompt)
+    return reply
+
+def build_prompt(user_message, context=None):
+    base = (
+        "Você é um assistente empático e acolhedor para uma plataforma de denúncias e apoio chamada ApoioJá.\n"
+        "Responda com empatia, segurança e sugira recursos apropriados. Não forneça diagnóstico profissional.\n\n"
+    )
+    if context:
+        base += f"Contexto da conversa:\n{context}\n\n"
+    base += f"Usuário: {user_message}\nResposta:"
+    return base
+
+# Modo fallback: respostas seguras e empáticas
+FALLBACK_RESPONSES = [
+    "Sinto muito que você esteja passando por isso. Se quiser, posso ouvir — conte um pouco mais.",
+    "Se estiver em perigo agora, por favor, procure ajuda imediata (polícia/serviços de emergência). Posso listar canais de apoio.",
+    "Obrigado por compartilhar. Gostaria de informações sobre serviços de apoio locais ou dicas de segurança?"
+]
+
+import random
+def get_fallback_response():
+    return random.choice(FALLBACK_RESPONSES)
+
+
+
+4. Backend — rota /api/chat (em app/routes.py)
+
+Adicione à sua routes.py:
+
+from flask import request, jsonify, current_app as app
+from .chatbot import get_gemini_response, get_fallback_response
+
+@app.route('/api/chat', methods=['POST', 'GET'])
+def api_chat():
+    if request.method == 'GET':
+        return jsonify({"info":"Use POST com JSON {'message':'texto'} para conversar."})
+
+    data = request.get_json() or {}
+    msg = data.get('message','').strip()
+    if not msg:
+        return jsonify({'error':'Envie uma mensagem no campo "message".'}), 400
+
+    # opcional: limitar tamanho da mensagem
+    if len(msg) > 2000:
+        return jsonify({'error':'Mensagem muito longa.'}), 400
+
+    # Tentar Gemini
+    reply = get_gemini_response(msg)
+    if reply:
+        # opcional: sanitizar reply
+        return jsonify({'reply': reply})
+
+    # fallback
+    fallback = get_fallback_response()
+    return jsonify({'reply': fallback})
+
+
+
+5. Frontend — widget de chat (HTML + JS)
+
+Edite app/templates/index.html e app/templates/denuncia.html (ou crie base.html) — inclua antes de </body>:
+
+<!-- Chatbot widget -->
+<div id="chatbot" class="chatbot" aria-hidden="true" style="display:none;">
+  <div class="chat-header">🤖 ApoioJá Chat</div>
+  <div id="chat-box" class="chat-box" role="log" aria-live="polite"></div>
+  <div class="chat-input">
+    <input id="chatMessage" type="text" placeholder="Escreva aqui..." aria-label="Mensagem">
+    <button id="sendChat" aria-label="Enviar mensagem">Enviar</button>
+  </div>
+</div>
+
+<button id="openChat" class="chat-toggle" aria-label="Abrir chat">💬</button>
+
+<script>
+(function(){
+  const chatDiv = document.getElementById("chatbot");
+  const toggle = document.getElementById("openChat");
+  const sendBtn = document.getElementById("sendChat");
+  const chatBox = document.getElementById("chat-box");
+  const input = document.getElementById("chatMessage");
+
+  toggle.addEventListener("click", () => {
+    const isVisible = chatDiv.style.display === "block";
+    chatDiv.style.display = isVisible ? "none" : "block";
+    chatDiv.setAttribute('aria-hidden', isVisible ? 'true' : 'false');
+  });
+
+  async function sendMessage() {
+    const text = input.value.trim();
+    if (!text) return;
+    chatBox.innerHTML += `<div class="user-msg">${escapeHtml(text)}</div>`;
+    input.value = "";
+    chatBox.scrollTop = chatBox.scrollHeight;
+
+    try {
+      const resp = await fetch("/api/chat", {
+        method: "POST",
+        headers: {"Content-Type":"application/json"},
+        body: JSON.stringify({message: text})
+      });
+      const data = await resp.json();
+      const reply = data.reply || data.error || "Desculpe, ocorreu um erro.";
+      chatBox.innerHTML += `<div class="bot-msg">${escapeHtml(reply)}</div>`;
+    } catch (e) {
+      chatBox.innerHTML += `<div class="bot-msg">Erro de rede. Tente novamente.</div>`;
+    } finally {
+      chatBox.scrollTop = chatBox.scrollHeight;
+    }
+  }
+
+  sendBtn.addEventListener("click", sendMessage);
+  input.addEventListener("keydown", function(e){
+    if (e.key === "Enter") sendMessage();
+  });
+
+  function escapeHtml(unsafe){
+    return unsafe.replace(/[&<"'>]/g, function(m){ return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":"&#039;"})[m]; });
+  }
+})();
+</script>
+
+
+
+6. CSS do widget (adicionar a app/static/style.css)
+
+Assegure estas regras:
+
+.chat-toggle { position: fixed; bottom: 25px; right: 25px; width:55px; height:55px; border-radius:50%; background:var(--accent); color:#fff; z-index:9999; border:none; font-size:24px; }
+.chatbot { display:none; position:fixed; bottom:90px; right:25px; width:320px; max-height:450px; z-index:9998; background:#fff; border-radius:12px; box-shadow:0 6px 18px rgba(0,0,0,0.15); overflow:hidden; display:flex; flex-direction:column; }
+.chat-header { background:var(--accent); color:#fff; padding:10px; text-align:center; font-weight:600; }
+.chat-box { padding:10px; overflow-y:auto; flex:1; }
+.user-msg { text-align:right; background:#DBE2EF; margin:6px; padding:8px; border-radius:8px; }
+.bot-msg { text-align:left; background:#F9F9F9; margin:6px; padding:8px; border-radius:8px; border:1px solid #e6eef9; }
+.chat-input { display:flex; padding:8px; border-top:1px solid #eee; }
+.chat-input input { flex:1; padding:8px; border-radius:8px; border:1px solid #ccc; }
+.chat-input button { margin-left:8px; padding:8px 12px; border-radius:8px; background:var(--accent); color:#fff; border:none; }
+
+
+7. Testes e validação
+7.1 Teste manual
+
+Rodar python run.py.
+
+Abrir http://127.0.0.1:5000/.
+
+Verificar botão 💬 canto inferior direito.
+
+Abrir widget, enviar mensagem; observar resposta.
+
+Se usar mock (sem GEMINI_API_KEY), receber resposta fallback.
+
+7.2 Teste via curl / Postman
+curl -X POST http://127.0.0.1:5000/api/chat -H "Content-Type: application/json" -d "{\"message\":\"Olá\"}"
+
+
+Resposta esperada (JSON): { "reply": "..." }.
+
+7.3 Testes unitários simples (pytest)
+
+Crie tests/test_chat_api.py:
+
+def test_chat_get(client):
+    resp = client.get('/api/chat')
+    assert resp.status_code == 200
+
+def test_chat_post_empty(client):
+    resp = client.post('/api/chat', json={})
+    assert resp.status_code == 400
+
+def test_chat_post_ok(client):
+    resp = client.post('/api/chat', json={'message':'oi'})
+    assert resp.status_code in (200,201)
+    data = resp.get_json()
+    assert 'reply' in data
+
+
+(Use fixture client do Flask testing).
+
+8. Segurança, privacidade e ética
+
+NUNCA exponha sua chave GEMINI_API_KEY no front-end ou em repositório público.
+
+Evite logar ou persistir mensagens com informações pessoais identificáveis (PII). Se precisar armazenar, anonymize e peça consentimento.
+
+Inclua um aviso no chat: “Este chatbot não substitui ajuda profissional. Se estiver em risco, contate serviços de emergência.”
+
+Rate-limit no backend para evitar abuso (ex.: max 5 requisições/min por IP, se aplicável).
+
+
+9. Modo mock (quando não houver chave)
+
+O chatbot.py já inclui fallback.
+
+Alternativa: implementar um arquivo mocks/responses.json com padrões por tema (ansiedade, agressão etc.) e escolher por palavras-chave.
+
+10. Boas práticas de implementação
+
+Separar lógica do chatbot (arquivo chatbot.py) do resto (rotas).
+
+Tratar erros do provedor IA com try/except e retornar fallback.
+
+Evitar respostas longas demais do modelo (truncate se necessário).
+
+Registrar métricas (counts, latência) em logs para avaliar uso (não logar PII).
+

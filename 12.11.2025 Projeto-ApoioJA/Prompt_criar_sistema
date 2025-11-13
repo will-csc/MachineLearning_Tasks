@@ -1,0 +1,175 @@
+Quero que se torne um engenheiro de software com vasta experiência em construção de sistemas em Python e me ajude a construir um projeto de uma plataforma digital de denúncia e apoio anônimo, com o objetivo de proporcionar um ambiente seguro para relatos de violência, abusos ou situações de vulnerabilidade.
+
+O projeto deve ser educacional, usado em cursos de Engenharia de Software, Quality Assurance e Machine Learning, sendo desenvolvido em 3 fases integradas, onde cada turma assume um papel técnico diferente.
+
+A aplicação também deve ser acessível, intuitiva, responsiva e acolhedora visualmente.
+
+Fases de Desenvolvimento
+Fase Desenvolvimento Base
+
+Criação da arquitetura completa do sistema web:
+
+Front-end (HTML, CSS e JavaScript)
+
+Back-end (Python + Flask)
+
+Banco de dados (SQLite integrado com SQLAlchemy)
+
+Estrutura de pastas do projeto:
+
+apoioja_project/
+├── app/
+│   ├── __init__.py
+│   ├── routes.py
+│   ├── models.py
+│   ├── static/
+│   │   ├── style.css
+│   │   ├── apoioja_banner.png
+│   │   └── mapa_mock.png
+│   └── templates/
+│       ├── index.html
+│       └── denuncia.html
+├── app.db
+├── run.py
+└── requirements.txt
+
+Funcionalidades da Fase 1:
+
+Página Inicial (index.html):
+
+Nome e logo “💙 ApoioJá”.
+
+Subtítulo: “Um espaço seguro e anônimo para pedir ajuda e denunciar.”
+
+Botão azul “🚨 Fazer uma Denúncia”.
+
+Botão discreto “🕵️ Modo Silêncio” (redireciona para google.com e apaga dados locais).
+
+Banner institucional (imagem apoioja_banner.png).
+
+Página de Denúncia (denuncia.html):
+
+Campos: Categoria, Local e Descrição.
+
+Botões: “Enviar Denúncia”, “Limpar Campos” e “Esconder”.
+
+Após enviar, os campos devem limpar automaticamente e exibir uma mensagem de sucesso.
+
+Imagem mock de mapa (mapa_mock.png) abaixo do formulário.
+
+Design responsivo, centralizado e visualmente agradável.
+
+Banco de Dados:
+
+Modelo Report com os campos:
+
+id (chave primária)
+
+category
+
+description
+
+location
+
+created_at (datetime)
+
+API Flask:
+
+Endpoint POST /api/reports para receber e salvar denúncias no banco.
+
+Endpoint GET /api/reports (opcional para visualização de dados salvos).
+
+Estilo visual (CSS):
+
+Tons suaves de azul (#EAF6FF, #3F72AF, #112D4E).
+
+Campos com espaçamento confortável.
+
+Bordas arredondadas, sombras sutis e responsividade.
+
+Página inicial centralizada vertical e horizontalmente.
+
+Botão “Modo Silêncio” pequeno e discreto no canto superior direito.
+
+Fase 2 — Inteligência Artificial (Turma de Machine Learning)
+
+Criar e integrar um chatbot inteligente usando a API do Google Gemini.
+
+O chatbot deve:
+
+Atender o usuário diretamente na plataforma.
+
+Responder de forma empática, acolhedora e orientada.
+
+Recomendar recursos de apoio e informações sobre proteção e denúncia.
+
+O chatbot será exibido em um componente lateral ou janela modal no front-end.
+
+O backend Flask deve gerenciar a comunicação entre o front-end e a API do Gemini.
+
+Fase 3 — Qualidade e Entrega Contínua (Turma de QA)
+
+Desenvolvimento e execução de testes unitários (Pytest) para o backend.
+
+Testes de usabilidade (UX) e performance da aplicação.
+
+Criação de roteiro de testes detalhado.
+
+Configuração de CI/CD com GitHub Actions, incluindo:
+
+Execução automática dos testes.
+
+Relatório de cobertura.
+
+Deploy automatizado (se desejado).
+
+Objetivos Pedagógicos e Sociais
+
+Integrar três turmas em um único projeto real de Engenharia de Software.
+
+Aplicar metodologias ativas como PBL (Project-Based Learning) e Aprendizagem Colaborativa.
+
+Promover a prática de ética, empatia e responsabilidade social no uso da tecnologia.
+
+Gerar um impacto social real através de uma ferramenta útil à comunidade.
+
+Requisitos Técnicos Gerais
+
+Linguagem principal: Python 3.10+
+
+Framework: Flask
+
+Banco de dados: SQLite
+
+ORM: SQLAlchemy
+
+Testes: Pytest
+
+Automação CI/CD: GitHub Actions
+
+Chatbot: Google Gemini API (Fase 2)
+
+Front-end: HTML5, CSS3, JavaScript puro
+
+Editor recomendado: Visual Studio Code
+
+Ferramentas auxiliares: Git, GitHub, e ambiente virtual (venv)
+
+Solicitação para a IA
+
+Construa o projeto ApoioJá completo com base em todas as especificações acima.
+Gere todos os arquivos e diretórios necessários, incluindo:
+
+Estrutura de pastas,
+
+Código backend (Flask),
+
+Front-end HTML e CSS,
+
+Banco de dados SQLite,
+
+Scripts de teste e CI/CD (Pytest + GitHub Actions),
+
+Integração de chatbot com a API do Gemini (Fase 2).
+
+O projeto deve ser totalmente funcional, com design acolhedor, intuitivo e seguro.

@@ -1,0 +1,640 @@
+Arquitetura Geral do Sistema
+
+A arquitetura será monolítica modular com separação lógica de camadas, ideal para projetos acadêmicos integrados:
+
+Frontend (HTML + CSS + JS)
+    ↓
+Flask (Controladores e Rotas)
+    ↓
+Camada de Modelos (SQLAlchemy)
+    ↓
+Banco de Dados SQLite
+
+
+Adicionalmente:
+- Camada /chatbot (para integração com Gemini na Fase 2)
+- Camada /tests (para Pytest e CI/CD na Fase 3)
+
+Estrutura de Pastas Recomendada. Crie o projeto base assim:
+
+apoioja/
+│
+├── app/
+│   ├── __init__.py
+│   ├── routes.py
+│   ├── models.py
+│   ├── static/
+│   │   └── style.css
+│   └── templates/
+│       ├── index.html
+│       └── denuncia.html
+│
+├── run.py
+├── config.py
+├── requirements.txt
+└── apoioja.db (será criado automaticamente)
+
+
+Preparação do Ambiente. Passo 1: Criar o ambiente virtual
+mkdir apoioja
+cd apoioja
+python -m venv venv
+venv\Scripts\activate  # Windows OU  source venv/bin/activate     # Linux/Mac
+
+Passo 2: Instalar as dependências básicas
+python -m pip install --upgrade pip
+pip install flask flask_sqlalchemy flask_cors flask_bcrypt
+pip freeze > requirements.txt
+
+
+Passo 3: Construir o run.py
+from app import app, db
+
+with app.app_context():
+    db.create_all()
+
+if __name__ == "__main__":
+    app.run(debug=True)
+
+
+
+app/__init__.py
+from flask import Flask
+from flask_sqlalchemy import SQLAlchemy
+from flask_cors import CORS
+
+app = Flask(__name__)
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///apoioja.db'
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+db = SQLAlchemy(app)
+CORS(app)
+
+from app import routes
+
+
+
+app/models.py
+from app import db
+from datetime import datetime
+
+class Report(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    category = db.Column(db.String(100))
+    description = db.Column(db.Text)
+    location = db.Column(db.String(100))
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+
+
+
+app/routes.py
+from flask import render_template, request, jsonify
+from app import app, db
+from app.models import Report
+
+@app.route('/')
+def index():
+    return render_template('index.html')
+
+@app.route('/denuncia')
+def denuncia():
+    return render_template('denuncia.html')
+
+@app.route('/api/reports', methods=['POST'])
+def create_report():
+    data = request.get_json()
+    new_report = Report(
+        category=data.get('category'),
+        description=data.get('description'),
+        location=data.get('location')
+    )
+    db.session.add(new_report)
+    db.session.commit()
+    return jsonify({"message": "Denúncia registrada com sucesso!"}), 201
+
+
+
+
+app/templates/index.html
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>ApoioJá - Início</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+  <main class="home-container">
+    <div class="home-content">
+      <h1 class="home-title">💙 ApoioJá</h1>
+      <p class="home-subtitle">Um espaço seguro e anônimo para pedir ajuda e denunciar.</p>
+
+      <div class="home-actions">
+        <a href="/denuncia" class="btn btn-primary">🚨 Fazer uma Denúncia</a>
+        <button onclick="panicButton()" class="btn btn-silent">🕵️ Modo Silêncio</button>
+      </div>
+
+      <img src="{{ url_for('static', filename='apoioja_banner.png') }}" alt="Banner ApoioJá" class="home-banner">
+    </div>
+  </main>
+
+  <script>
+    function panicButton() {
+      try { localStorage.clear(); sessionStorage.clear(); } catch (e) {}
+      window.location.href = 'https://www.google.com';
+    }
+  </script>
+</body>
+</html>
+
+
+
+
+app/templates/denuncia.html
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Registrar Denúncia - ApoioJá</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+  <header class="topbar">
+    <h1 class="brand">💙 ApoioJá</h1>
+    <button onclick="panicButton()" class="btn-silent" title="Modo Silêncio">🕵️</button>
+  </header>
+
+  <main class="page-center">
+    <div class="form-container">
+      <!-- Banner acima do formulário -->
+      <img src="{{ url_for('static', filename='apoioja_banner.png') }}" alt="Banner ApoioJá" class="banner-img">
+
+      <h2>Registrar Denúncia</h2>
+      <p class="subtitle">Seu relato é totalmente anônimo e protegido.</p>
+
+      <form id="formDenuncia" class="denuncia-form" autocomplete="off" novalidate>
+        <div class="form-group">
+          <label for="categoria">Categoria</label>
+          <input type="text" id="categoria" placeholder="Ex: violência doméstica" required>
+        </div>
+
+        <div class="form-group">
+          <label for="local">Local</label>
+          <input type="text" id="local" placeholder="Ex: residência, trabalho, rua..." required>
+        </div>
+
+        <div class="form-group">
+          <label for="descricao">Descrição</label>
+          <textarea id="descricao" placeholder="Descreva o ocorrido..." required></textarea>
+        </div>
+
+        <div class="actions">
+          <button type="submit" class="btn btn-primary">📨 Enviar Denúncia</button>
+          <button type="button" class="btn btn-secondary" onclick="clearFields()">🧹 Limpar Campos</button>
+          <button type="button" class="btn btn-secondary" onclick="toggleForm()">🙈 Esconder</button>
+        </div>
+      </form>
+
+      <p id="mensagem" class="mensagem" role="status"></p>
+
+      <!-- Mapa mock abaixo -->
+      <div class="map-container">
+        <h3>🗺️ Mapa de delegacias próximas ou ligue 190 </h3>
+        <img src="{{ url_for('static', filename='mapa_mock.png') }}" alt="Mapa Simulado" class="map-img">
+        <p class="map-caption">Mapa apenas ilustrativo enquanto a integração não está pronta.</p>
+      </div>
+    </div>
+  </main>
+
+  <script>
+  function clearFields() {
+    const form = document.getElementById('formDenuncia');
+    form.reset();
+    try { localStorage.clear(); sessionStorage.clear(); } catch (e) {}
+  }
+
+  function toggleForm() {
+    const form = document.getElementById('formDenuncia');
+    form.style.display = (form.style.display === 'none') ? 'block' : 'none';
+  }
+
+  function panicButton() {
+    try { localStorage.clear(); sessionStorage.clear(); } catch (e) {}
+    window.location.href = 'https://www.google.com';
+  }
+
+  document.getElementById('formDenuncia').addEventListener('submit', async (e) => {
+    e.preventDefault();
+
+    const data = {
+      category: document.getElementById('categoria').value.trim(),
+      description: document.getElementById('descricao').value.trim(),
+      location: document.getElementById('local').value.trim()
+    };
+
+    if (!data.category || !data.description || !data.location) {
+      document.getElementById('mensagem').innerText = 'Por favor, preencha todos os campos.';
+      document.getElementById('mensagem').style.color = '#E74C3C';
+      return;
+    }
+
+    try {
+      const resp = await fetch('/api/reports', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      });
+
+      if (resp.ok) {
+        const json = await resp.json();
+        document.getElementById('mensagem').innerText = json.message || '✅ Denúncia enviada com sucesso.';
+        document.getElementById('mensagem').style.color = '#2E8B57';
+        clearFields(); // limpa automaticamente após o envio
+      } else {
+        document.getElementById('mensagem').innerText = '❌ Erro ao enviar denúncia. Tente novamente.';
+        document.getElementById('mensagem').style.color = '#E74C3C';
+      }
+    } catch (err) {
+      document.getElementById('mensagem').innerText = '⚠️ Falha de conexão com o servidor.';
+      document.getElementById('mensagem').style.color = '#E67E22';
+    }
+  });
+</script>
+</body>
+</html>
+
+
+
+app/static/style.css
+/* =========================================================
+   ESTILO GERAL DO PROJETO APOIOJÁ
+   ========================================================= */
+:root {
+  --bg: #EAF6FF;         /* azul bem clarinho */
+  --card: #FFFFFF;
+  --accent: #3F72AF;
+  --muted: #6B7A90;
+  --success: #2E8B57;
+  --danger: #E74C3C;
+}
+
+/* ===== BASE ===== */
+body {
+  margin: 0;
+  font-family: "Open Sans", Arial, sans-serif;
+  background: var(--bg);
+  color: #112D4E;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+h1, h2, h3, h4, h5 {
+  margin: 0;
+}
+
+/* ===== TOPO ===== */
+.topbar {
+  background-color: var(--accent);
+  color: white;
+  padding: 10px 18px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  box-shadow: 0 3px 8px rgba(17,45,78,0.12);
+}
+
+.brand {
+  font-size: 22px;
+  font-weight: 700;
+  margin: 0;
+}
+
+/* Botão discreto de modo silêncio */
+.btn-silent {
+  background: none;
+  color: white;
+  border: none;
+  font-size: 16px;
+  opacity: 0.6;
+  cursor: pointer;
+  transition: 0.3s;
+  padding: 4px 8px;
+  border-radius: 4px;
+}
+.btn-silent:hover {
+  opacity: 1;
+  background-color: rgba(255,255,255,0.1);
+}
+
+/* =========================================================
+   PÁGINA INICIAL
+   ========================================================= */
+.home-container {
+  height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-color: var(--bg);
+  text-align: center;
+  padding: 20px;
+}
+
+.home-content {
+  background-color: var(--card);
+  border-radius: 15px;
+  padding: 40px 60px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  max-width: 600px;
+  width: 90%;
+}
+
+.home-title {
+  font-size: 36px;
+  color: var(--accent);
+  margin-bottom: 10px;
+}
+
+.home-subtitle {
+  font-size: 18px;
+  color: #112D4E;
+  margin-bottom: 30px;
+}
+
+.home-actions {
+  display: flex;
+  justify-content: center;
+  gap: 15px;
+  margin-bottom: 25px;
+  flex-wrap: wrap;
+}
+
+/* Botões da página inicial */
+.btn {
+  border: none;
+  border-radius: 8px;
+  padding: 12px 18px;
+  font-size: 16px;
+  cursor: pointer;
+  transition: 0.3s;
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.btn-primary {
+  background-color: var(--accent);
+  color: white;
+}
+.btn-primary:hover {
+  background-color: #112D4E;
+}
+
+.btn-silent-home {
+  background-color: #F9F9F9;
+  border: 1px solid var(--accent);
+  color: var(--accent);
+  opacity: 0.8;
+  font-size: 14px;
+}
+.btn-silent-home:hover {
+  opacity: 1;
+  background-color: #DBE2EF;
+}
+
+.home-banner {
+  width: 280px;
+  margin-top: 10px;
+  border-radius: 12px;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
+
+/* =========================================================
+   PÁGINA DE DENÚNCIA
+   ========================================================= */
+.page-center {
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  min-height: 90vh;
+  padding: 40px 10px;
+}
+
+.form-container {
+  background: var(--card);
+  padding: 35px 45px;
+  border-radius: 15px;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+  text-align: center;
+  max-width: 700px;
+  width: 100%;
+}
+
+.banner-img {
+  width: 250px;
+  margin-bottom: 20px;
+  border-radius: 10px;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
+
+/* ===== Formulário ===== */
+h2 {
+  font-size: 26px;
+  margin-bottom: 10px;
+  color: var(--accent);
+}
+.subtitle {
+  color: var(--muted);
+  font-size: 16px;
+  margin-bottom: 25px;
+}
+
+.form-group {
+  margin-bottom: 20px;
+  text-align: left;
+}
+
+label {
+  display: block;
+  font-weight: 600;
+  margin-bottom: 8px;
+  font-size: 16px;
+}
+
+input, textarea {
+  width: 100%;
+  padding: 12px;
+  border-radius: 8px;
+  border: 1px solid #c8d4e7;
+  font-size: 15px;
+  color: #112D4E;
+}
+
+textarea {
+  resize: vertical;
+  min-height: 100px;
+}
+
+/* ===== Botões ===== */
+.actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 15px;
+  flex-wrap: wrap;
+}
+.btn-secondary {
+  background-color: #DBE2EF;
+  color: var(--accent);
+  border: 1px solid var(--accent);
+}
+.btn-secondary:hover {
+  background-color: var(--accent);
+  color: white;
+}
+
+.mensagem {
+  text-align: center;
+  color: var(--success);
+  font-weight: 600;
+  margin-top: 15px;
+  font-size: 16px;
+}
+
+/* ===== Mapa Mock ===== */
+.map-container {
+  background: #F8FAFF;
+  border-radius: 12px;
+  padding: 15px;
+  margin-top: 25px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+}
+
+.map-container h3 {
+  color: var(--accent);
+  margin-bottom: 10px;
+}
+
+.map-img {
+  width: 100%;
+  max-width: 500px;
+  border-radius: 10px;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
+
+.map-caption {
+  font-size: 13px;
+  color: var(--muted);
+  margin-top: 8px;
+}
+
+/* =========================================================
+   RESPONSIVIDADE
+   ========================================================= */
+@media (max-width: 768px) {
+  .form-container {
+    padding: 25px;
+  }
+  .banner-img {
+    width: 200px;
+  }
+  .home-content {
+    padding: 25px 30px;
+  }
+  .home-title {
+    font-size: 30px;
+  }
+  .home-subtitle {
+    font-size: 16px;
+  }
+  .home-banner {
+    width: 220px;
+  }
+}
+@media (max-width: 480px) {
+  .topbar {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+  .home-actions {
+    flex-direction: column;
+    gap: 10px;
+  }
+  .btn {
+    width: 100%;
+    text-align: center;
+  }
+}
+
+
+Agora vá na pasta apoioja/app/static e baixe para seu projeto os arquivos PNG na mesma pasta correspondente em seu projeto (apoioja/app/static)
+apoioja_banner.png
+mapa_mock.png
+
+
+Agora, executar o sistema pelo terminal:
+
+Executar o projeto:
+
+python run.py (ou python3 run.py)
+
+
+Abrir um navegador e acessar:
+
+http://localhost:5000
+
+
+Resultado esperado:
+
+Você verá uma tela inicial com o logotipo ApoioJá, o botão “Fazer uma denúncia” e o “Modo Silêncio”.
+Ao clicar em Fazer uma denúncia, o formulário será exibido, permitindo enviar dados que serão salvos no banco de dados apoioja.db.
+
+
+
+Como o banco é criado automaticamente?
+
+Quando você abre o terminal e roda o sistema com:
+
+python run.py
+
+O Flask faz:
+
+Cria o aplicativo (app = create_app()),
+
+Lê a configuração do banco ('sqlite:///apoioja.db'),
+
+E executa db.create_all() → isso cria as tabelas que estão definidas no models.py. Ou seja: se o arquivo apoioja.db não existir, o Flask vai criá-lo automaticamente e adicionar a tabela reports.
+
+
+Verificando se o banco foi criado
+
+Se você quiser confirmar manualmente que o banco está criado e funcionando, pode entrar no modo interativo do Python (shell) e rodar alguns comandos para inspecionar os dados.
+
+No terminal, dentro da pasta do projeto:
+
+python
+
+Isso abre o modo interativo do Python (vai aparecer >>>).
+
+Aí você digita:
+
+from app import create_app, db
+from app.models import Report
+
+app = create_app()           # cria o app Flask
+app.app_context().push()     # ativa o contexto do Flask (necessário para acessar o banco)
+db.session.query(Report).count()
+
+O que esse comando faz:
+from app import create_app, db → importa a função que cria o app e o objeto do banco.
+from app.models import Report → importa o modelo (tabela) que criamos no banco.
+app = create_app() → inicializa o aplicativo Flask.
+app.app_context().push() → ativa o contexto da aplicação para que o SQLAlchemy saiba qual app está em uso.
+db.session.query(Report).count() → conta quantos registros existem na tabela reports.
+
+Se tudo estiver certo, você verá algo assim:
+
+0
+(ou outro número se já houver denúncias registradas).
+
+SIGA AGORA PARA A FASE 2

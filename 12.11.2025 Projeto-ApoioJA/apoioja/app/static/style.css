@@ -1,0 +1,386 @@
+/* =========================================================
+   ESTILO GERAL DO PROJETO APOIOJÁ
+   ========================================================= */
+:root {
+  --bg: #EAF6FF;         /* azul bem clarinho */
+  --card: #FFFFFF;
+  --accent: #3F72AF;
+  --muted: #6B7A90;
+  --success: #2E8B57;
+  --danger: #E74C3C;
+}
+
+/* ===== BASE ===== */
+body {
+  margin: 0;
+  font-family: "Open Sans", Arial, sans-serif;
+  background: var(--bg);
+  color: #112D4E;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+h1, h2, h3, h4, h5 {
+  margin: 0;
+}
+
+/* ===== TOPO ===== */
+.topbar {
+  background-color: var(--accent);
+  color: white;
+  padding: 10px 18px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  box-shadow: 0 3px 8px rgba(17,45,78,0.12);
+}
+
+.brand {
+  font-size: 22px;
+  font-weight: 700;
+  margin: 0;
+}
+
+/* Botão discreto de modo silêncio */
+.btn-silent {
+  background: none;
+  color: white;
+  border: none;
+  font-size: 16px;
+  opacity: 0.6;
+  cursor: pointer;
+  transition: 0.3s;
+  padding: 4px 8px;
+  border-radius: 4px;
+}
+.btn-silent:hover {
+  opacity: 1;
+  background-color: rgba(255,255,255,0.1);
+}
+
+/* =========================================================
+   PÁGINA INICIAL
+   ========================================================= */
+.home-container {
+  height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-color: var(--bg);
+  text-align: center;
+  padding: 20px;
+}
+
+.home-content {
+  background-color: var(--card);
+  border-radius: 15px;
+  padding: 40px 60px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  max-width: 600px;
+  width: 90%;
+}
+
+.home-title {
+  font-size: 36px;
+  color: var(--accent);
+  margin-bottom: 10px;
+}
+
+.home-subtitle {
+  font-size: 18px;
+  color: #112D4E;
+  margin-bottom: 30px;
+}
+
+.home-actions {
+  display: flex;
+  justify-content: center;
+  gap: 15px;
+  margin-bottom: 25px;
+  flex-wrap: wrap;
+}
+
+/* Botões da página inicial */
+.btn {
+  border: none;
+  border-radius: 8px;
+  padding: 12px 18px;
+  font-size: 16px;
+  cursor: pointer;
+  transition: 0.3s;
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.btn-primary {
+  background-color: var(--accent);
+  color: white;
+}
+.btn-primary:hover {
+  background-color: #112D4E;
+}
+
+.btn-silent-home {
+  background-color: #F9F9F9;
+  border: 1px solid var(--accent);
+  color: var(--accent);
+  opacity: 0.8;
+  font-size: 14px;
+}
+.btn-silent-home:hover {
+  opacity: 1;
+  background-color: #DBE2EF;
+}
+
+.home-banner {
+  width: 280px;
+  margin-top: 10px;
+  border-radius: 12px;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
+
+/* =========================================================
+   PÁGINA DE DENÚNCIA
+   ========================================================= */
+.page-center {
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  min-height: 90vh;
+  padding: 40px 10px;
+}
+
+.form-container {
+  background: var(--card);
+  padding: 35px 45px;
+  border-radius: 15px;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+  text-align: center;
+  max-width: 700px;
+  width: 100%;
+}
+
+.banner-img {
+  width: 250px;
+  margin-bottom: 20px;
+  border-radius: 10px;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
+
+/* ===== Formulário ===== */
+h2 {
+  font-size: 26px;
+  margin-bottom: 10px;
+  color: var(--accent);
+}
+.subtitle {
+  color: var(--muted);
+  font-size: 16px;
+  margin-bottom: 25px;
+}
+
+.form-group {
+  margin-bottom: 20px;
+  text-align: left;
+}
+
+label {
+  display: block;
+  font-weight: 600;
+  margin-bottom: 8px;
+  font-size: 16px;
+}
+
+input, textarea {
+  width: 100%;
+  padding: 12px;
+  border-radius: 8px;
+  border: 1px solid #c8d4e7;
+  font-size: 15px;
+  color: #112D4E;
+}
+
+textarea {
+  resize: vertical;
+  min-height: 100px;
+}
+
+/* ===== Botões ===== */
+.actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 15px;
+  flex-wrap: wrap;
+}
+.btn-secondary {
+  background-color: #DBE2EF;
+  color: var(--accent);
+  border: 1px solid var(--accent);
+}
+.btn-secondary:hover {
+  background-color: var(--accent);
+  color: white;
+}
+
+.mensagem {
+  text-align: center;
+  color: var(--success);
+  font-weight: 600;
+  margin-top: 15px;
+  font-size: 16px;
+}
+
+/* ===== Mapa Mock ===== */
+.map-container {
+  background: #F8FAFF;
+  border-radius: 12px;
+  padding: 15px;
+  margin-top: 25px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+}
+
+.map-container h3 {
+  color: var(--accent);
+  margin-bottom: 10px;
+}
+
+.map-img {
+  width: 100%;
+  max-width: 500px;
+  border-radius: 10px;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
+
+.map-caption {
+  font-size: 13px;
+  color: var(--muted);
+  margin-top: 8px;
+}
+
+/* =========================================================
+   RESPONSIVIDADE
+   ========================================================= */
+@media (max-width: 768px) {
+  .form-container {
+    padding: 25px;
+  }
+  .banner-img {
+    width: 200px;
+  }
+  .home-content {
+    padding: 25px 30px;
+  }
+  .home-title {
+    font-size: 30px;
+  }
+  .home-subtitle {
+    font-size: 16px;
+  }
+  .home-banner {
+    width: 220px;
+  }
+}
+@media (max-width: 480px) {
+  .topbar {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+  .home-actions {
+    flex-direction: column;
+    gap: 10px;
+  }
+  .btn {
+    width: 100%;
+    text-align: center;
+  }
+}
+
+/* =========================================================
+   WIDGET DE CHAT
+   ========================================================= */
+.chat-fab {
+  position: fixed;
+  right: 20px;
+  bottom: 20px;
+  background-color: var(--accent);
+  color: white;
+  border: none;
+  border-radius: 50%;
+  width: 56px;
+  height: 56px;
+  font-size: 22px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+  cursor: pointer;
+}
+.chat-fab:hover { background-color: #112D4E; }
+
+.chat-widget {
+  position: fixed;
+  right: 20px;
+  bottom: 90px;
+  width: 320px;
+  max-height: 70vh;
+  background: var(--card);
+  border-radius: 12px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.2);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  z-index: 1000;
+}
+.chat-widget.hidden { display: none; }
+
+.chat-header {
+  background-color: var(--accent);
+  color: white;
+  padding: 10px 12px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.chat-close {
+  background: transparent;
+  border: none;
+  color: white;
+  font-size: 16px;
+  cursor: pointer;
+}
+.chat-messages {
+  padding: 10px;
+  overflow-y: auto;
+  flex: 1;
+  background: #F8FAFF;
+}
+.chat-msg { 
+  padding: 8px 10px; 
+  border-radius: 10px; 
+  margin: 6px 0; 
+  max-width: 85%;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+}
+.chat-msg.me { 
+  background: #DBE2EF; 
+  margin-left: auto; 
+}
+.chat-msg.bot { 
+  background: #FFFFFF; 
+  margin-right: auto; 
+}
+.chat-input {
+  display: flex;
+  gap: 8px;
+  padding: 10px;
+  border-top: 1px solid #e5eaf2;
+}
+.chat-input input {
+  flex: 1;
+  padding: 10px;
+  border: 1px solid #c8d4e7;
+  border-radius: 8px;
+}
+.chat-disclaimer {
+  font-size: 12px;
+  color: var(--muted);
+  padding: 0 10px 10px 10px;
+}

@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>ApoioJá - Início</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+  <main class="home-container">
+    <div class="home-content">
+      <h1 class="home-title">💙 ApoioJá</h1>
+      <p class="home-subtitle">Um espaço seguro e anônimo para pedir ajuda e denunciar.</p>
+
+      <div class="home-actions">
+        <a href="/denuncia" class="btn btn-primary">🚨 Fazer uma Denúncia</a>
+        <button onclick="panicButton()" class="btn btn-silent">🕵️ Modo Silêncio</button>
+      </div>
+
+      <img src="{{ url_for('static', filename='apoioja_banner.png') }}" alt="Banner ApoioJá" class="home-banner">
+    </div>
+  </main>
+
+  <script>
+    function panicButton() {
+      try { localStorage.clear(); sessionStorage.clear(); } catch (e) {}
+      window.location.href = 'https://www.google.com';
+    }
+  </script>
+  
+  <!-- Widget de Chat ApoioJá -->
+  <div id="chatWidget" class="chat-widget hidden" aria-label="Chat ApoioJá">
+    <div class="chat-header">
+      <span>💬 ApoioJá Chat</span>
+      <button id="chatCloseBtn" class="chat-close" aria-label="Fechar">✖</button>
+    </div>
+    <div id="chatMessages" class="chat-messages" aria-live="polite"></div>
+    <div class="chat-input">
+      <input id="chatInput" type="text" placeholder="Escreva sua mensagem..." />
+      <button id="chatSendBtn" class="btn btn-primary">Enviar</button>
+    </div>
+    <p class="chat-disclaimer">Este chatbot não substitui ajuda profissional. Em risco, contate 190.</p>
+  </div>
+  <button id="chatWidgetBtn" class="chat-fab" title="Conversar">💬</button>
+
+  <script>
+  (function(){
+    const fab = document.getElementById('chatWidgetBtn');
+    const box = document.getElementById('chatWidget');
+    const close = document.getElementById('chatCloseBtn');
+    const input = document.getElementById('chatInput');
+    const send = document.getElementById('chatSendBtn');
+    const messages = document.getElementById('chatMessages');
+
+    function addMsg(text, author){
+      const el = document.createElement('div');
+      el.className = 'chat-msg ' + (author === 'user' ? 'me' : 'bot');
+      el.textContent = text;
+      messages.appendChild(el);
+      messages.scrollTop = messages.scrollHeight;
+    }
+
+    fab.addEventListener('click', ()=> {
+      box.classList.remove('hidden');
+      input.focus();
+    });
+    close.addEventListener('click', ()=> {
+      box.classList.add('hidden');
+    });
+    send.addEventListener('click', async ()=> {
+      const msg = input.value.trim();
+      if(!msg) return;
+      addMsg(msg, 'user');
+      input.value = '';
+      try {
+        const resp = await fetch('/api/chat', {
+          method: 'POST',
+          headers: {'Content-Type':'application/json'},
+          body: JSON.stringify({message: msg})
+        });
+        const json = await resp.json();
+        const reply = json.reply || json.error || 'Desculpe, não consegui responder agora.';
+        addMsg(reply, 'bot');
+      } catch(err){
+        addMsg('Falha de conexão com o servidor.', 'bot');
+      }
+    });
+    input.addEventListener('keydown', (e)=>{
+      if(e.key === 'Enter'){ send.click(); }
+    });
+  })();
+  </script>
+</body>
+</html>
